@@ -10,6 +10,8 @@
 .wrangler/*
 .cloudflared
 .cloudflared/*
+.cloudflare
+.cloudflare/*
 
 # testing
 /coverage

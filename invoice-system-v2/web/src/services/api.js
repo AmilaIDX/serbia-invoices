@@ -20,25 +20,9 @@ export const login = async (email, password) => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
-  return handleResponse(res);
-};
-
-export const requestPasswordReset = async (email) => {
-  const res = await fetch(`${API_URL}/api/auth/request-reset`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email }),
-  });
-  return handleResponse(res);
-};
-
-export const resetPassword = async (token, password) => {
-  const res = await fetch(`${API_URL}/api/auth/reset`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token, password }),
-  });
-  return handleResponse(res);
+  const data = await handleResponse(res);
+  if (data.token) localStorage.setItem("token", data.token);
+  return data;
 };
 
 export const getCurrentUser = async () => {
@@ -55,22 +39,45 @@ export const updateCurrentUser = async (payload) => {
   return handleResponse(res);
 };
 
-export const generateInvoiceNumber = async () => {
-  const res = await fetch(`${API_URL}/api/invoices/generate-number`, { headers: { ...authHeaders() } });
+export const getClients = async () => {
+  const res = await fetch(`${API_URL}/api/clients`, { headers: { ...authHeaders() } });
+  return handleResponse(res);
+};
+
+export const createClient = async (payload) => {
+  const res = await fetch(`${API_URL}/api/clients`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(res);
+};
+
+export const updateClient = async (id, payload) => {
+  const res = await fetch(`${API_URL}/api/clients/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(res);
+};
+
+export const deleteClient = async (id) => {
+  const res = await fetch(`${API_URL}/api/clients/${id}`, {
+    method: "DELETE",
+    headers: { ...authHeaders() },
+  });
+  if (res.status === 204) return true;
   return handleResponse(res);
 };
 
 export const getInvoices = async () => {
-  const res = await fetch(`${API_URL}/api/invoices`, {
-    headers: { ...authHeaders() },
-  });
+  const res = await fetch(`${API_URL}/api/invoices`, { headers: { ...authHeaders() } });
   return handleResponse(res);
 };
 
 export const getInvoice = async (id) => {
-  const res = await fetch(`${API_URL}/api/invoices/${id}`, {
-    headers: { ...authHeaders() },
-  });
+  const res = await fetch(`${API_URL}/api/invoices/${id}`, { headers: { ...authHeaders() } });
   return handleResponse(res);
 };
 
@@ -101,11 +108,8 @@ export const deleteInvoice = async (id) => {
   return handleResponse(res);
 };
 
-export const uploadFile = async (_file) => {
-  const res = await fetch(`${API_URL}/api/upload-url`, {
-    method: "POST",
-    headers: { ...authHeaders() },
-  });
+export const generateInvoiceNumber = async () => {
+  const res = await fetch(`${API_URL}/api/invoices/generate-number`, { headers: { ...authHeaders() } });
   return handleResponse(res);
 };
 
@@ -113,43 +117,6 @@ export const getInvoicePdf = async (id) => {
   const res = await fetch(`${API_URL}/api/invoices/pdf/${id}`, { headers: { ...authHeaders() } });
   if (!res.ok) throw new Error("Failed to download PDF");
   return res.arrayBuffer();
-};
-
-export const getClients = async () => {
-  const res = await fetch(`${API_URL}/api/clients`, { headers: { ...authHeaders() } });
-  return handleResponse(res);
-};
-
-export const createClient = async (payload) => {
-  const res = await fetch(`${API_URL}/api/clients`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
-    body: JSON.stringify(payload),
-  });
-  return handleResponse(res);
-};
-
-export const getClient = async (id) => {
-  const res = await fetch(`${API_URL}/api/clients/${id}`, { headers: { ...authHeaders() } });
-  return handleResponse(res);
-};
-
-export const updateClient = async (id, payload) => {
-  const res = await fetch(`${API_URL}/api/clients/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
-    body: JSON.stringify(payload),
-  });
-  return handleResponse(res);
-};
-
-export const deleteClient = async (id) => {
-  const res = await fetch(`${API_URL}/api/clients/${id}`, {
-    method: "DELETE",
-    headers: { ...authHeaders() },
-  });
-  if (res.status === 204) return true;
-  return handleResponse(res);
 };
 
 export const getSettings = async () => {

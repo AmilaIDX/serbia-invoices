@@ -16,10 +16,27 @@ const computeTotals = (items = [], vat = 0) => {
   return { items: enriched.map((i) => ({ ...i, total: i.quantity * i.price })), subtotal, vat: vatAmount, total };
 };
 
+const getPrefixPadding = async () => {
+  const prefixRow = await get("SELECT value FROM settings WHERE key = 'invoice_prefix'");
+  const paddingRow = await get("SELECT value FROM settings WHERE key = 'invoice_padding'");
+  const prefix = prefixRow?.value || "INV";
+  const padding = Number(paddingRow?.value || 5);
+  return { prefix, padding };
+};
+
 const nextNumber = async () => {
-  const latest = await get("SELECT id FROM invoices ORDER BY id DESC LIMIT 1");
-  const next = (latest?.id || 0) + 1;
-  return `INV-${new Date().getFullYear()}-${String(next).padStart(4, "0")}`;
+  const { prefix, padding } = await getPrefixPadding();
+  const row = await get("SELECT current FROM invoice_counter WHERE id = 1");
+  let current = 0;
+  if (!row) {
+    await run("INSERT INTO invoice_counter (id, current) VALUES (1, 0)");
+  } else {
+    current = row.current;
+  }
+  const next = current + 1;
+  await run("UPDATE invoice_counter SET current = ? WHERE id = 1", [next]);
+  const padded = String(next).padStart(padding, "0");
+  return `${prefix}-${padded}`;
 };
 
 const buildPdf = async (invoice) => {
@@ -35,7 +52,7 @@ const buildPdf = async (invoice) => {
   const accent = rgb(0.23, 0.51, 0.94);
   page.drawRectangle({ x: 0, y: height - 120, width, height: 120, color: headerBg });
   drawText("Invoice", 40, height - 50, 22, accent, "bold");
-  drawText(`Invoice #: ${invoice.id}`, 40, height - 75, 12, rgb(0, 0, 0), "bold");
+  drawText(`Invoice #: ${invoice.invoice_number || invoice.id}`, 40, height - 75, 12, rgb(0, 0, 0), "bold");
   drawText(`Date: ${invoice.date || "-"}`, 40, height - 95);
   drawText(`Due: ${invoice.due_date || "-"}`, 40, height - 110);
   drawText("Bill To", 40, height - 150, 12, accent, "bold");
@@ -66,16 +83,9 @@ const buildPdf = async (invoice) => {
   return pdfDoc.save();
 };
 
-router.get("/generate-number", (_req, res) => {
-  db.get("SELECT current FROM invoice_counter WHERE id = 1", (err, row) => {
-    if (!row) {
-      db.run("INSERT INTO invoice_counter (id, current) VALUES (1, 1)");
-      return res.json({ number: 1 });
-    }
-    const next = row.current + 1;
-    db.run("UPDATE invoice_counter SET current = ?", [next]);
-    res.json({ number: next });
-  });
+router.get("/generate-number", async (_req, res) => {
+  const num = await nextNumber();
+  res.json({ invoice_number: num });
 });
 
 router.get("/", async (_req, res) => {
@@ -92,13 +102,13 @@ router.get("/:id", async (req, res) => {
     [req.params.id]
   );
   if (!row) return res.status(404).json({ error: "Not found" });
-  res.json(row);
+  res.json({ ...row, items: row.items ? JSON.parse(row.items) : [] });
 });
 
 router.post("/", async (req, res) => {
   const payload = req.body || {};
   const items = payload.items || payload.line_items || [];
-  const { subtotal, vat, total } = computeTotals(items, payload.vat || 0);
+  const totals = computeTotals(items, payload.vat || 0);
   let clientId = payload.client_id;
   if (!clientId && payload.client_name) {
     const client = await run(
@@ -108,16 +118,18 @@ router.post("/", async (req, res) => {
     clientId = client.lastID;
   }
   if (!clientId) return res.status(400).json({ error: "client_id or client_name required" });
+  const invoiceNumber = payload.invoice_number || (await nextNumber());
   const result = await run(
-    "INSERT INTO invoices (client_id, date, due_date, items, subtotal, vat, total, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO invoices (client_id, invoice_number, date, due_date, items, subtotal, vat, total, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
     [
       clientId,
+      invoiceNumber,
       payload.date || payload.issue_date || new Date().toISOString(),
       payload.due_date || null,
-      JSON.stringify(items),
-      subtotal,
-      vat,
-      total,
+      JSON.stringify(totals.items),
+      totals.subtotal,
+      totals.vat,
+      totals.total,
       payload.notes || "",
     ]
   );
@@ -125,7 +137,7 @@ router.post("/", async (req, res) => {
     "SELECT invoices.*, clients.name as client_name FROM invoices LEFT JOIN clients ON invoices.client_id = clients.id WHERE invoices.id = ?",
     [result.lastID]
   );
-  res.status(201).json({ ...row, items });
+  res.status(201).json({ ...row, items: totals.items });
 });
 
 router.put("/:id", async (req, res) => {
@@ -143,12 +155,13 @@ router.put("/:id", async (req, res) => {
     clientId = client.lastID;
   }
   await run(
-    "UPDATE invoices SET client_id = ?, date = ?, due_date = ?, items = ?, subtotal = ?, vat = ?, total = ?, notes = ? WHERE id = ?",
+    "UPDATE invoices SET client_id = ?, invoice_number = ?, date = ?, due_date = ?, items = ?, subtotal = ?, vat = ?, total = ?, notes = ? WHERE id = ?",
     [
       clientId,
+      payload.invoice_number ?? existing.invoice_number ?? (await nextNumber()),
       payload.date ?? payload.issue_date ?? existing.date,
       payload.due_date ?? existing.due_date,
-      JSON.stringify(items),
+      JSON.stringify(totals.items),
       totals.subtotal,
       totals.vat,
       totals.total,
@@ -160,7 +173,7 @@ router.put("/:id", async (req, res) => {
     "SELECT invoices.*, clients.name as client_name FROM invoices LEFT JOIN clients ON invoices.client_id = clients.id WHERE invoices.id = ?",
     [req.params.id]
   );
-  res.json({ ...row, items });
+  res.json({ ...row, items: totals.items });
 });
 
 router.delete("/:id", async (req, res) => {
@@ -177,13 +190,8 @@ router.get("/pdf/:id", async (req, res) => {
   const invoice = { ...row, items: row.items ? JSON.parse(row.items) : [] };
   const pdfBytes = await buildPdf(invoice);
   res.setHeader("content-type", "application/pdf");
-  res.setHeader("content-disposition", `inline; filename=\"invoice-${invoice.id}.pdf\"`);
+  res.setHeader("content-disposition", `inline; filename=\"invoice-${invoice.invoice_number || invoice.id}.pdf\"`);
   res.send(Buffer.from(pdfBytes));
-});
-
-router.get("/generate-number", async (_req, res) => {
-  const num = await nextNumber();
-  res.json({ invoice_number: num });
 });
 
 module.exports = router;

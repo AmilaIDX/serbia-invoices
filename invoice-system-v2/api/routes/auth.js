@@ -9,9 +9,9 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body || {};
-    if (!email || !password) return res.status(400).json({ error: "Email and password required" });
-    const user = await get("SELECT * FROM users WHERE email = ?", [email]);
+  const { email, password } = req.body || {};
+  if (!email || !password) return res.status(400).json({ error: "Email and password required" });
+  const user = await get("SELECT * FROM users WHERE email = ?", [email]);
     if (!user) return res.status(401).json({ error: "Invalid credentials" });
     const ok = bcrypt.compareSync(password, user.password);
     if (!ok) return res.status(401).json({ error: "Invalid credentials" });

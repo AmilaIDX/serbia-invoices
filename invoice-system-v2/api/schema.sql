@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS clients (
 CREATE TABLE IF NOT EXISTS invoices (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   client_id INTEGER,
+  invoice_number TEXT,
   date TEXT,
   due_date TEXT,
   items TEXT,

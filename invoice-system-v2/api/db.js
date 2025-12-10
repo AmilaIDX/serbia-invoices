@@ -46,22 +46,20 @@ const init = async () => {
     await run(stmt);
   }
   db.get("SELECT COUNT(*) AS count FROM invoice_counter", (err, row) => {
-    if (!err && row && row.count === 0) {
+    if (row && row.count === 0) {
       db.run("INSERT INTO invoice_counter (current) VALUES (0)");
     }
   });
   if (ADMIN_EMAIL && ADMIN_PASSWORD) {
     const existing = await get("SELECT id FROM users WHERE email = ?", [ADMIN_EMAIL]);
-    const hashed = bcrypt.hashSync(ADMIN_PASSWORD, 10);
+    const hashed = await bcrypt.hash(ADMIN_PASSWORD, 10);
     if (existing) {
       await run("UPDATE users SET password = ?, name = ? WHERE id = ?", [hashed, ADMIN_NAME, existing.id]);
     } else {
-      await run("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)", [
-        ADMIN_NAME,
-        ADMIN_EMAIL,
-        hashed,
-        "admin",
-      ]);
+      await run(
+        "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, 'admin') ON CONFLICT(email) DO NOTHING",
+        [ADMIN_NAME || "Administrator", ADMIN_EMAIL, hashed]
+      );
     }
   }
 };

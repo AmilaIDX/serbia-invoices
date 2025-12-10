@@ -1,13 +1,14 @@
 {
-	"name": "serbia-worker",
+  "name": "serbia-worker",
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "node src/server.js",
-    "start": "node src/server.js"
+    "dev": "node server.js",
+    "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
     "pdf-lib": "^1.17.1",
     "sqlite3": "^5.1.7"
   }

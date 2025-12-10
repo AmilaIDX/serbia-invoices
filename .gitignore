@@ -1,0 +1,37 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+/serbia-worker/node_modules
+/serbia-worker/.wrangler
+.wrangler
+.wrangler/*
+.cloudflared
+.cloudflared/*
+
+# testing
+/coverage
+
+# production
+/build
+/serbia-worker/build
+dist/
+
+# misc
+.DS_Store
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.log
+*.pem
+*.key
+*.crt
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

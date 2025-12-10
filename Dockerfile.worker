@@ -1,0 +1,9 @@
+FROM node:18-alpine
+WORKDIR /app
+COPY serbia-worker/package*.json ./serbia-worker/
+RUN cd serbia-worker && npm ci
+COPY serbia-worker ./serbia-worker
+WORKDIR /app/serbia-worker
+ENV NODE_ENV=production
+# Runs wrangler dev (or replace with wrangler deploy if targeting CF)
+CMD ["npm", "start"]

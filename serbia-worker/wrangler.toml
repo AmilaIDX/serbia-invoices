@@ -1,0 +1,15 @@
+name = "serbia-worker"
+main = "src/index.js"
+compatibility_date = "2025-12-08"
+
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "serbia_invoices"
+database_id = "b89194a6-d5e1-419d-b338-f4be0f961005"
+
+[[d1_databases]]
+binding = "serbia_invoices"
+database_name = "serbia_invoices"
+database_id = "b89194a6-d5e1-419d-b338-f4be0f961005"

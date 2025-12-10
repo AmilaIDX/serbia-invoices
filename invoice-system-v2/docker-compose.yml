@@ -10,7 +10,10 @@ services:
       - ./data:/data
 
   web:
-    build: ./web
+    build:
+      context: ./web
+      args:
+        REACT_APP_API_URL: ${REACT_APP_API_URL}
     ports:
       - "3000:3000"
     depends_on:

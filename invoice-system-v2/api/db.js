@@ -45,6 +45,11 @@ const init = async () => {
   for (const stmt of stmts) {
     await run(stmt);
   }
+  db.get("SELECT COUNT(*) AS count FROM invoice_counter", (err, row) => {
+    if (!err && row && row.count === 0) {
+      db.run("INSERT INTO invoice_counter (current) VALUES (0)");
+    }
+  });
   if (ADMIN_EMAIL && ADMIN_PASSWORD) {
     const existing = await get("SELECT id FROM users WHERE email = ?", [ADMIN_EMAIL]);
     const hashed = bcrypt.hashSync(ADMIN_PASSWORD, 10);

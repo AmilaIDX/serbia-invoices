@@ -1,14 +1,14 @@
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT,
-  email TEXT UNIQUE,
-  password TEXT,
+  name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL,
   role TEXT DEFAULT 'admin'
 );
 
 CREATE TABLE IF NOT EXISTS clients (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT,
+  name TEXT NOT NULL,
   address TEXT,
   phone TEXT,
   email TEXT
@@ -23,7 +23,13 @@ CREATE TABLE IF NOT EXISTS invoices (
   subtotal REAL,
   vat REAL,
   total REAL,
-  notes TEXT
+  notes TEXT,
+  FOREIGN KEY (client_id) REFERENCES clients(id)
+);
+
+CREATE TABLE IF NOT EXISTS invoice_counter (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  current INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS settings (

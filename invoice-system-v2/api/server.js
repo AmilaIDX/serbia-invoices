@@ -6,6 +6,7 @@ const authRoutes = require("./routes/auth");
 const clientsRoutes = require("./routes/clients");
 const invoicesRoutes = require("./routes/invoices");
 const settingsRoutes = require("./routes/settings");
+const usersRoutes = require("./routes/users");
 
 const app = express();
 const PORT = process.env.PORT || 8787;
@@ -16,7 +17,12 @@ if (!JWT_SECRET) {
   process.exit(1);
 }
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "*",
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 app.get("/api/health", (_req, res) => res.json({ status: "ok", db: DB_FILE }));
@@ -40,6 +46,7 @@ app.use((req, res, next) => {
 app.use("/api/clients", clientsRoutes);
 app.use("/api/invoices", invoicesRoutes);
 app.use("/api/settings", settingsRoutes);
+app.use("/api/users", usersRoutes);
 
 init().then(() => {
   app.listen(PORT, () => {

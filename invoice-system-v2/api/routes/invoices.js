@@ -1,5 +1,5 @@
 const express = require("express");
-const { all, get, run } = require("../db");
+const { all, get, run, db } = require("../db");
 const { PDFDocument, StandardFonts, rgb } = require("pdf-lib");
 
 const router = express.Router();
@@ -65,6 +65,18 @@ const buildPdf = async (invoice) => {
   drawText(`Total: ${Number(invoice.total || 0).toFixed(2)}`, 40, y, 14, accent, "bold");
   return pdfDoc.save();
 };
+
+router.get("/generate-number", (_req, res) => {
+  db.get("SELECT current FROM invoice_counter WHERE id = 1", (err, row) => {
+    if (!row) {
+      db.run("INSERT INTO invoice_counter (id, current) VALUES (1, 1)");
+      return res.json({ number: 1 });
+    }
+    const next = row.current + 1;
+    db.run("UPDATE invoice_counter SET current = ?", [next]);
+    res.json({ number: next });
+  });
+});
 
 router.get("/", async (_req, res) => {
   const rows = await all(

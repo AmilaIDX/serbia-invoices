@@ -1,110 +1,54 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { getClient, updateClient, deleteClient } from "../services/api";
+import React, { useEffect, useState } from "react";
+import { getClients, deleteClient } from "../services/api";
+import { useParams, useNavigate } from "react-router-dom";
 
 const ClientDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [client, setClient] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-
-  const load = async () => {
-    setError("");
-    try {
-      const data = await getClient(id);
-      setClient(data);
-    } catch (err) {
-      setError(err.message || "Failed to load client");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [error, setError] = useState(null);
 
   useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const all = await getClients();
+        const found = all.find((c) => String(c.id) === String(id));
+        setClient(found || null);
+      } catch (err) {
+        console.error("Failed to load client", err);
+        setError("Failed to load client");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const handleChange = (key, value) => setClient((prev) => ({ ...prev, [key]: value }));
-
-  const handleSave = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    setError("");
-    try {
-      await updateClient(id, client);
-      await load();
-    } catch (err) {
-      setError(err.message || "Failed to update client");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleDelete = async () => {
-    if (!window.confirm("Delete this client?")) return;
-    setDeleting(true);
+    if (!window.confirm("Are you sure you want to delete this client?")) return;
+
     try {
       await deleteClient(id);
       navigate("/clients");
     } catch (err) {
-      setError(err.message || "Failed to delete client");
-    } finally {
-      setDeleting(false);
+      console.error("Failed to delete client", err);
+      alert("Failed to delete client");
     }
   };
 
-  if (loading) return <div className="card">Loading...</div>;
-  if (error) return <div className="danger">{error}</div>;
-  if (!client) return <div className="card">Not found.</div>;
+  if (loading) return <div>Loading client...</div>;
+  if (error) return <div>{error}</div>;
+  if (!client) return <div>Client not found.</div>;
 
   return (
-    <div className="grid">
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <h1 className="page-title">{client.name}</h1>
-        <button className="btn secondary" onClick={() => navigate(-1)}>
-          Back
-        </button>
-      </div>
-      <form className="card grid" onSubmit={handleSave}>
-        <div className="form-grid">
-          <div className="form-control">
-            <label>Name</label>
-            <input value={client.name} onChange={(e) => handleChange("name", e.target.value)} />
-          </div>
-          <div className="form-control">
-            <label>Email</label>
-            <input value={client.email} onChange={(e) => handleChange("email", e.target.value)} />
-          </div>
-          <div className="form-control">
-            <label>Phone</label>
-            <input value={client.phone} onChange={(e) => handleChange("phone", e.target.value)} />
-          </div>
-          <div className="form-control">
-            <label>Address</label>
-            <input value={client.address} onChange={(e) => handleChange("address", e.target.value)} />
-          </div>
-          <div className="form-control">
-            <label>Applying From (Country)</label>
-            <input
-              value={client.applying_from || ""}
-              onChange={(e) => handleChange("applying_from", e.target.value)}
-            />
-          </div>
-        </div>
-        {error && <div className="danger">{error}</div>}
-        <div style={{ display: "flex", gap: "10px" }}>
-          <button className="btn" type="submit" disabled={saving}>
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
-          <button className="btn secondary" type="button" onClick={handleDelete} disabled={deleting}>
-            {deleting ? "Deleting..." : "Delete Client"}
-          </button>
-        </div>
-      </form>
+    <div>
+      <h1>Client Detail</h1>
+      <pre>{JSON.stringify(client, null, 2)}</pre>
+      <button onClick={handleDelete}>Delete client</button>
     </div>
   );
 };

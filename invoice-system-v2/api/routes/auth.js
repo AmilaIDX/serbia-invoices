@@ -1,19 +1,19 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { get, run } = require("../db");
 const crypto = require("crypto");
+const { get, run } = require("../db");
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET;
 
 router.post("/login", async (req, res) => {
   try {
-  const { email, password } = req.body || {};
-  if (!email || !password) return res.status(400).json({ error: "Email and password required" });
-  const user = await get("SELECT * FROM users WHERE email = ?", [email]);
+    const { email, password } = req.body || {};
+    if (!email || !password) return res.status(400).json({ error: "Email and password required" });
+    const user = await get("SELECT * FROM users WHERE email = ?", [email]);
     if (!user) return res.status(401).json({ error: "Invalid credentials" });
-    const ok = bcrypt.compareSync(password, user.password);
+    const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(401).json({ error: "Invalid credentials" });
     const token = jwt.sign({ sub: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: "12h" });
     res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
@@ -37,7 +37,7 @@ router.post("/reset", async (req, res) => {
   if (!token || !password) return res.status(400).json({ error: "Token and password required" });
   const user = await get("SELECT * FROM users WHERE reset_token = ?", [token]);
   if (!user) return res.status(400).json({ error: "Invalid token" });
-  const hashed = bcrypt.hashSync(password, 10);
+  const hashed = await bcrypt.hash(password, 12);
   await run("UPDATE users SET password = ?, reset_token = NULL WHERE id = ?", [hashed, user.id]);
   res.json({ ok: true });
 });

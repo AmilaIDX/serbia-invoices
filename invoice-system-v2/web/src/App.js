@@ -4,18 +4,15 @@ import DashboardPage from "./pages/DashboardPage";
 import LoginPage from "./pages/LoginPage";
 import InvoiceDetailPage from "./pages/InvoiceDetailPage";
 import CreateInvoicePage from "./pages/CreateInvoicePage";
-import UploadPage from "./pages/UploadPage";
 import ClientsPage from "./pages/ClientsPage";
 import CreateClientPage from "./pages/CreateClientPage";
 import ClientDetailPage from "./pages/ClientDetailPage";
 import SettingsPage from "./pages/SettingsPage";
-import ReportsPage from "./pages/ReportsPage";
-import ExportPage from "./pages/ExportPage";
-import RecurringPage from "./pages/RecurringPage";
-import ResetRequestPage from "./pages/ResetRequestPage";
-import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ProfilePage from "./pages/ProfilePage";
+import UsersPage from "./pages/UsersPage";
+import InvoicesPage from "./pages/InvoicesPage";
 import Sidebar from "./components/Sidebar";
+import { getCurrentUser } from "./services/api";
 import "./styles/theme.css";
 import "./App.css";
 
@@ -55,6 +52,19 @@ function App() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  useEffect(() => {
+    if (!token) return;
+    const loadMe = async () => {
+      try {
+        const me = await getCurrentUser();
+        setUser(me);
+      } catch {
+        handleLogout();
+      }
+    };
+    loadMe();
+  }, [token]);
+
   const handleLogout = () => {
     setToken("");
     setUser(null);
@@ -66,19 +76,24 @@ function App() {
     <BrowserRouter>
       <div className={`app ${isAuthed ? "" : "no-sidebar"}`}>
         {isAuthed && (
-          <Sidebar
-            onLogout={handleLogout}
-            theme={theme}
-            onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
-            collapsed={isMobile && !sidebarOpen}
-          />
+          <>
+            {isMobile && sidebarOpen && <div className="overlay" onClick={() => setSidebarOpen(false)} />}
+            <Sidebar
+              onLogout={handleLogout}
+              theme={theme}
+              onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
+              collapsed={isMobile && !sidebarOpen}
+              user={user}
+              mobile={isMobile}
+            />
+          </>
         )}
         <div className="main">
           <div className="content">
             {isAuthed && (
               <div className="mobile-toggle">
                 <button className="btn secondary" onClick={() => setSidebarOpen((v) => !v)}>
-                  {sidebarOpen ? "✕" : "☰"} Menu
+                  {sidebarOpen ? "Close" : "☰ Menu"}
                 </button>
               </div>
             )}
@@ -88,8 +103,6 @@ function App() {
                 element={isAuthed ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />}
               />
               <Route path="/login" element={<LoginPage onAuth={(t, u) => { setToken(t); setUser(u); }} />} />
-              <Route path="/reset-request" element={<ResetRequestPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route
                 path="/dashboard"
                 element={
@@ -99,15 +112,15 @@ function App() {
                 }
               />
               <Route
-                path="/invoice/:id"
+                path="/invoices"
                 element={
                   <ProtectedRoute isAuthed={isAuthed}>
-                    <InvoiceDetailPage />
+                    <InvoicesPage />
                   </ProtectedRoute>
                 }
               />
               <Route
-                path="/create"
+                path="/invoices/create"
                 element={
                   <ProtectedRoute isAuthed={isAuthed}>
                     <CreateInvoicePage />
@@ -115,10 +128,10 @@ function App() {
                 }
               />
               <Route
-                path="/upload"
+                path="/invoices/:id"
                 element={
                   <ProtectedRoute isAuthed={isAuthed}>
-                    <UploadPage />
+                    <InvoiceDetailPage />
                   </ProtectedRoute>
                 }
               />
@@ -155,26 +168,10 @@ function App() {
                 }
               />
               <Route
-                path="/reports"
+                path="/users"
                 element={
                   <ProtectedRoute isAuthed={isAuthed}>
-                    <ReportsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/export"
-                element={
-                  <ProtectedRoute isAuthed={isAuthed}>
-                    <ExportPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/recurring"
-                element={
-                  <ProtectedRoute isAuthed={isAuthed}>
-                    <RecurringPage />
+                    <UsersPage />
                   </ProtectedRoute>
                 }
               />

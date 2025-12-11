@@ -4,16 +4,21 @@ import { getSettings, updateSettings, getCurrentUser, updateCurrentUser } from "
 const SettingsPage = () => {
   const [settings, setSettings] = useState({
     company_name: "",
+    company_email: "",
+    company_phone: "",
     company_address: "",
     company_logo: "",
-    default_terms: "",
-    default_due_offset: "7",
+    company_tax: "",
+    payment_terms: "",
+    footer_text: "",
+    invoice_prefix: "INV",
+    invoice_padding: "5",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [user, setUser] = useState({ name: "", email: "", phone: "", password: "" });
+  const [user, setUser] = useState({ name: "", email: "", password: "" });
   const [savingUser, setSavingUser] = useState(false);
 
   useEffect(() => {
@@ -58,20 +63,20 @@ const SettingsPage = () => {
     try {
       const updated = await updateCurrentUser(user);
       setUser((prev) => ({ ...prev, ...updated, password: "" }));
-      setMessage("User updated");
+      setMessage("Profile updated");
     } catch (err) {
-      setError(err.message || "Failed to update user");
+      setError(err.message || "Failed to update profile");
     } finally {
       setSavingUser(false);
     }
   };
 
-  if (loading) return <div className="card">Loading...</div>;
+  if (loading) return <div className="card glass">Loading...</div>;
 
   return (
     <div className="grid">
       <h1 className="page-title">Settings</h1>
-      <div className="card grid">
+      <div className="card glass grid">
         <h2 style={{ margin: 0 }}>My Profile</h2>
         <form className="form-grid" onSubmit={handleSaveUser}>
           <div className="form-control">
@@ -81,10 +86,6 @@ const SettingsPage = () => {
           <div className="form-control">
             <label>Email</label>
             <input value={user.email || ""} onChange={(e) => setUser({ ...user, email: e.target.value })} />
-          </div>
-          <div className="form-control">
-            <label>Phone</label>
-            <input value={user.phone || ""} onChange={(e) => setUser({ ...user, phone: e.target.value })} />
           </div>
           <div className="form-control">
             <label>New password</label>
@@ -100,14 +101,19 @@ const SettingsPage = () => {
           </button>
         </form>
       </div>
-      <form className="card grid" onSubmit={handleSubmit}>
+      <form className="card glass grid" onSubmit={handleSubmit}>
         <div className="form-grid">
           <div className="form-control">
             <label>Company name</label>
-            <input
-              value={settings.company_name || ""}
-              onChange={(e) => handleChange("company_name", e.target.value)}
-            />
+            <input value={settings.company_name || ""} onChange={(e) => handleChange("company_name", e.target.value)} />
+          </div>
+          <div className="form-control">
+            <label>Company email</label>
+            <input value={settings.company_email || ""} onChange={(e) => handleChange("company_email", e.target.value)} />
+          </div>
+          <div className="form-control">
+            <label>Company phone</label>
+            <input value={settings.company_phone || ""} onChange={(e) => handleChange("company_phone", e.target.value)} />
           </div>
           <div className="form-control">
             <label>Company address</label>
@@ -117,23 +123,40 @@ const SettingsPage = () => {
             />
           </div>
           <div className="form-control">
-            <label>Logo URL</label>
+            <label>Company tax ID</label>
+            <input value={settings.company_tax || ""} onChange={(e) => handleChange("company_tax", e.target.value)} />
+          </div>
+          <div className="form-control">
+            <label>Logo (data URL)</label>
             <input value={settings.company_logo || ""} onChange={(e) => handleChange("company_logo", e.target.value)} />
           </div>
           <div className="form-control">
-            <label>Default invoice terms</label>
-            <textarea
-              value={settings.default_terms || ""}
-              onChange={(e) => handleChange("default_terms", e.target.value)}
-              rows={3}
+            <label>Invoice prefix</label>
+            <input value={settings.invoice_prefix || ""} onChange={(e) => handleChange("invoice_prefix", e.target.value)} />
+          </div>
+          <div className="form-control">
+            <label>Invoice padding</label>
+            <input
+              type="number"
+              min="1"
+              value={settings.invoice_padding || 5}
+              onChange={(e) => handleChange("invoice_padding", e.target.value)}
             />
           </div>
           <div className="form-control">
-            <label>Default due date offset (days)</label>
-            <input
-              type="number"
-              value={settings.default_due_offset || 7}
-              onChange={(e) => handleChange("default_due_offset", e.target.value)}
+            <label>Payment terms</label>
+            <textarea
+              rows={3}
+              value={settings.payment_terms || ""}
+              onChange={(e) => handleChange("payment_terms", e.target.value)}
+            />
+          </div>
+          <div className="form-control">
+            <label>Footer text</label>
+            <textarea
+              rows={2}
+              value={settings.footer_text || ""}
+              onChange={(e) => handleChange("footer_text", e.target.value)}
             />
           </div>
         </div>

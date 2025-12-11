@@ -4,7 +4,7 @@ import { createClient } from "../services/api";
 
 const CreateClientPage = () => {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: "", address: "", applying_from: "", email: "", phone: "" });
+  const [form, setForm] = useState({ name: "", address: "", email: "", phone: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -27,7 +27,7 @@ const CreateClientPage = () => {
   return (
     <div className="grid">
       <h1 className="page-title">Create Client</h1>
-      <form className="card grid" onSubmit={handleSubmit}>
+      <form className="card glass grid" onSubmit={handleSubmit}>
         <div className="form-grid">
           <div className="form-control">
             <label>Name</label>
@@ -44,10 +44,6 @@ const CreateClientPage = () => {
           <div className="form-control">
             <label>Address</label>
             <input value={form.address} onChange={(e) => handleChange("address", e.target.value)} />
-          </div>
-          <div className="form-control">
-            <label>Applying From (Country)</label>
-            <input value={form.applying_from} onChange={(e) => handleChange("applying_from", e.target.value)} />
           </div>
         </div>
         {error && <div className="danger">{error}</div>}

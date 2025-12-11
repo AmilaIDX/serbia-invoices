@@ -13,17 +13,30 @@ const PORT = process.env.PORT || 8787;
 const JWT_SECRET = process.env.JWT_SECRET;
 
 if (!JWT_SECRET) {
-  console.error("❌ Missing JWT_SECRET environment variable");
+  console.error("Missing JWT_SECRET environment variable");
   process.exit(1);
 }
 
+const allowedOrigins = new Set(["https://visa.idgraphicx.com", "http://localhost:3000"]);
+
 app.use(
   cors({
-    origin: "*",
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // allow CLI tools
+      if (allowedOrigins.has(origin)) return callback(null, true);
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );
-app.use(express.json());
+app.use(express.json({ limit: "2mb" }));
+
+app.use((err, _req, res, next) => {
+  if (err?.message === "Not allowed by CORS") {
+    return res.status(403).json({ error: "Origin not allowed" });
+  }
+  return next(err);
+});
 
 app.get("/api/health", (_req, res) => res.json({ status: "ok", db: DB_FILE }));
 

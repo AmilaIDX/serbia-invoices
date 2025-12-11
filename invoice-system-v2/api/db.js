@@ -42,26 +42,56 @@ const init = async () => {
     .split(";")
     .map((s) => s.trim())
     .filter(Boolean);
+
   for (const stmt of stmts) {
     await run(stmt);
   }
-  db.get("SELECT COUNT(*) AS count FROM invoice_counter", (err, row) => {
-    if (row && row.count === 0) {
-      db.run("INSERT INTO invoice_counter (current) VALUES (0)");
-    }
-  });
+
+  const counterRow = await get("SELECT COUNT(*) as count FROM invoice_counter");
+  if (!counterRow || counterRow.count === 0) {
+    await run("INSERT INTO invoice_counter (value) VALUES (0)");
+  }
+
   if (ADMIN_EMAIL && ADMIN_PASSWORD) {
+    const hashed = await bcrypt.hash(ADMIN_PASSWORD, 12);
     const existing = await get("SELECT id FROM users WHERE email = ?", [ADMIN_EMAIL]);
-    const hashed = await bcrypt.hash(ADMIN_PASSWORD, 10);
     if (existing) {
-      await run("UPDATE users SET password = ?, name = ? WHERE id = ?", [hashed, ADMIN_NAME, existing.id]);
+      await run("UPDATE users SET name = ?, password = ?, role = 'admin' WHERE id = ?", [
+        ADMIN_NAME || "Administrator",
+        hashed,
+        existing.id,
+      ]);
     } else {
-      await run(
-        "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, 'admin') ON CONFLICT(email) DO NOTHING",
-        [ADMIN_NAME || "Administrator", ADMIN_EMAIL, hashed]
-      );
+      await run("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, 'admin')", [
+        ADMIN_NAME || "Administrator",
+        ADMIN_EMAIL,
+        hashed,
+      ]);
     }
+  }
+
+  // Default invoice settings
+  const defaults = [
+    ["invoice_prefix", "INV"],
+    ["invoice_padding", "5"],
+    ["company_name", "Your Company"],
+    ["company_email", ""],
+    ["company_phone", ""],
+    ["company_address", ""],
+    ["company_tax", ""],
+    ["invoice_start", "1"],
+    ["default_vat_rate", "0"],
+    ["payment_terms", "Payment due within 14 days."],
+    ["footer_text", "Thank you for your business."],
+  ];
+  for (const [key, value] of defaults) {
+    await run("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO NOTHING", [key, value]);
   }
 };
 
-module.exports = { db, run, get, all, init, DB_FILE };
+const getSettingsMap = async () => {
+  const rows = await all("SELECT key, value FROM settings");
+  return (rows || []).reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {});
+};
+
+module.exports = { db, run, get, all, init, DB_FILE, getSettingsMap };

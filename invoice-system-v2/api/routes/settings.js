@@ -1,23 +1,23 @@
 const express = require("express");
-const { all, run, db } = require("../db");
+const { run, getSettingsMap } = require("../db");
 
 const router = express.Router();
 
 router.get("/", async (_req, res) => {
-  const rows = await all("SELECT key, value FROM settings");
-  const map = (rows || []).reduce((acc, row) => ({ ...acc, [row.key]: row.value }), {});
+  const map = await getSettingsMap();
   res.json(map);
 });
 
 router.post("/update", async (req, res) => {
   const payload = req.body || {};
-  Object.entries(payload).forEach(([key, value]) => {
-    db.run(
-      "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = ?",
-      [key, value, value]
+  for (const [key, value] of Object.entries(payload)) {
+    await run(
+      "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+      [key, value]
     );
-  });
-  res.json({ success: true });
+  }
+  const map = await getSettingsMap();
+  res.json(map);
 });
 
 module.exports = router;

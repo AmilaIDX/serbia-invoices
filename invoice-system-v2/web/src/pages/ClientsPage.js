@@ -24,7 +24,7 @@ const ClientsPage = () => {
 
   return (
     <div className="grid">
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div className="topbar">
         <h1 className="page-title">Clients</h1>
         <Link className="btn" to="/clients/create">
           New Client
@@ -32,31 +32,29 @@ const ClientsPage = () => {
       </div>
       {error && <div className="danger">{error}</div>}
       {loading ? (
-        <div className="card">Loading...</div>
+        <div className="card glass">Loading...</div>
       ) : (
-        <div className="card">
+        <div className="card glass">
           <table className="table">
             <thead>
               <tr>
                 <th>Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Applying From</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {clients.map((client) => (
-            <tr key={client.id}>
-              <td>{client.name}</td>
-              <td>{client.email}</td>
-              <td>{client.phone}</td>
-              <td>{client.applying_from || "—"}</td>
-              <td>
-                <Link className="link" to={`/clients/${client.id}`}>
-                  View
-                </Link>
-              </td>
+                <th>Email</th>
+                <th>Phone</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {clients.map((client) => (
+                <tr key={client.id}>
+                  <td>{client.name}</td>
+                  <td>{client.email}</td>
+                  <td>{client.phone}</td>
+                  <td>
+                    <Link className="btn secondary" to={`/clients/${client.id}`}>
+                      View
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>

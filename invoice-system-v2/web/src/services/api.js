@@ -1,5 +1,9 @@
 const API_URL = process.env.REACT_APP_API_URL;
 
+if (!API_URL) {
+  throw new Error("REACT_APP_API_URL is required");
+}
+
 const authHeaders = () => {
   const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -137,4 +141,35 @@ export const updateSettings = async (payload) => {
 export const uploadFile = async () => {
   // Placeholder since uploads are not implemented in v2
   return { uploadUrl: "" };
+};
+
+export const listUsers = async () => {
+  const res = await fetch(`${API_URL}/api/users`, { headers: { ...authHeaders() } });
+  return handleResponse(res);
+};
+
+export const getUsers = listUsers;
+
+export const createUser = async (payload) => {
+  const res = await fetch(`${API_URL}/api/users`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(res);
+};
+
+export const updateUser = async (id, payload) => {
+  const res = await fetch(`${API_URL}/api/users/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(res);
+};
+
+export const deleteUser = async (id) => {
+  const res = await fetch(`${API_URL}/api/users/${id}`, { method: "DELETE", headers: { ...authHeaders() } });
+  if (res.status === 204) return true;
+  return handleResponse(res);
 };

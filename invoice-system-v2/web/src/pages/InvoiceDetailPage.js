@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { deleteInvoice, getInvoice, updateInvoice, getInvoicePdf } from "../services/api";
 import InvoiceForm from "../components/InvoiceForm";
-import VisaTimeline from "../components/VisaTimeline";
 
 const InvoiceDetailPage = () => {
   const { id } = useParams();
@@ -30,14 +29,15 @@ const InvoiceDetailPage = () => {
   }, [id]);
 
   const handleUpdate = async (payload) => {
-    await updateInvoice(id, payload);
+    const updated = await updateInvoice(id, payload);
     await load();
+    return updated;
   };
 
   const handleDelete = async () => {
     if (!window.confirm("Delete this invoice?")) return;
     await deleteInvoice(id);
-    navigate("/dashboard");
+    navigate("/invoices");
   };
 
   const handleDownload = async () => {
@@ -54,46 +54,51 @@ const InvoiceDetailPage = () => {
     }
   };
 
-  if (loading) return <div className="card">Loading...</div>;
+  if (loading) return <div className="card glass">Loading...</div>;
   if (error) return <div className="danger">{error}</div>;
-  if (!invoice) return <div className="card">Not found.</div>;
+  if (!invoice) return <div className="card glass">Not found.</div>;
 
   return (
     <div className="grid">
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div className="topbar">
         <h1 className="page-title">Invoice {invoice.invoice_number || `#${invoice.id}`}</h1>
         <div style={{ display: "flex", gap: "10px" }}>
           <button className="btn secondary" onClick={() => navigate(-1)}>
             Back
           </button>
           <button className="btn secondary" onClick={handleDownload} disabled={downloading}>
-            {downloading ? "Preparing PDF..." : "PDF"}
+            {downloading ? "Preparing..." : "PDF"}
           </button>
           <button className="btn" onClick={handleDelete}>
             Delete
           </button>
         </div>
       </div>
-      <div className="card grid">
+      <div className="card glass grid">
         <div className="form-grid">
           <div className="form-control">
             <label>Client</label>
             <div>{invoice.client_name}</div>
             <div className="muted">{invoice.client_email}</div>
-            <div className="muted">{invoice.client_address}</div>
+            <div className="muted">{invoice.client_phone}</div>
           </div>
           <div className="form-control">
             <label>Dates</label>
-            <div className="muted">Issued: {invoice.issue_date?.slice(0, 10)}</div>
+            <div className="muted">Date: {invoice.date?.slice(0, 10)}</div>
             <div className="muted">Due: {invoice.due_date?.slice(0, 10) || "—"}</div>
           </div>
           <div className="form-control">
-            <label>Status</label>
-            <div className="badge">{invoice.status}</div>
+            <label>Totals</label>
+            <div className="muted">Subtotal: {Number(invoice.subtotal || 0).toFixed(2)}</div>
+            <div className="muted">VAT: {Number(invoice.vat || 0).toFixed(2)}</div>
           </div>
           <div className="form-control">
             <label>Total</label>
-            <div style={{ fontSize: 24, fontWeight: 700 }}>LKR {Number(invoice.total_amount || 0).toFixed(2)}</div>
+            <div style={{ fontSize: 24, fontWeight: 700 }}>{Number(invoice.total || 0).toFixed(2)}</div>
+          </div>
+          <div className="form-control">
+            <label>Status</label>
+            <span className="badge">{invoice.status || "pending"}</span>
           </div>
         </div>
         <div className="grid">
@@ -107,26 +112,22 @@ const InvoiceDetailPage = () => {
                 <th>Total</th>
               </tr>
             </thead>
-              <tbody>
-                {invoice.line_items?.map((item, idx) => (
-                  <tr key={idx}>
-                    <td>{item.description}</td>
-                    <td>{item.quantity}</td>
-                    <td>LKR {Number(item.unit_price || 0).toFixed(2)}</td>
-                    <td>LKR {Number(item.total || item.unit_price * item.quantity || 0).toFixed(2)}</td>
-                  </tr>
-                ))}
+            <tbody>
+              {invoice.items?.map((item, idx) => (
+                <tr key={idx}>
+                  <td>{item.description}</td>
+                  <td>{item.quantity}</td>
+                  <td>{Number(item.unit_price || 0).toFixed(2)}</td>
+                  <td>{Number(item.total || item.unit_price * item.quantity || 0).toFixed(2)}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
-        <div className="muted">Created: {invoice.created_at}</div>
+        <div className="muted">Notes: {invoice.notes || "None"}</div>
       </div>
 
-      <h2 className="page-title">Update</h2>
-      <VisaTimeline
-        timeline={invoice.timeline}
-        onUpdate={(next) => handleUpdate({ ...invoice, timeline: next })}
-      />
+      <h2 className="page-title">Update Invoice</h2>
       <InvoiceForm onSubmit={handleUpdate} initial={invoice} />
     </div>
   );

@@ -7,13 +7,14 @@ const CreateInvoicePage = () => {
 
   const handleCreate = async (payload) => {
     const invoice = await createInvoice(payload);
-    navigate(`/invoice/${invoice.id}`);
+    navigate(`/invoices/${invoice.id}`);
+    return invoice;
   };
 
   return (
     <div className="grid">
-      <h1 className="page-title">Generate Invoice</h1>
-      <p className="muted">Invoice numbers auto-generate. Add client, dates, and line items; final amount is calculated.</p>
+      <h1 className="page-title">Create Invoice</h1>
+      <p className="muted">Generate a secure invoice number, attach a client, and build a clean PDF-ready invoice.</p>
       <InvoiceForm onSubmit={handleCreate} />
     </div>
   );

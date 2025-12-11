@@ -38,12 +38,12 @@ const ProfilePage = () => {
     }
   };
 
-  if (loading) return <div className="card">Loading...</div>;
+  if (loading) return <div className="card glass">Loading...</div>;
 
   return (
     <div className="grid">
       <h1 className="page-title">My Profile</h1>
-      <form className="card grid" onSubmit={handleSubmit}>
+      <form className="card glass grid" onSubmit={handleSubmit}>
         <div className="form-grid">
           <div className="form-control">
             <label>Name</label>

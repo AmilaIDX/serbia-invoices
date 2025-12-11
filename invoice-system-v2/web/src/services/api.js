@@ -132,3 +132,8 @@ export const updateSettings = async (payload) => {
   });
   return handleResponse(res);
 };
+
+// Placeholder upload; backend does not support file uploads in v2
+export const uploadFile = async () => {
+  throw new Error("Upload not supported");
+};
